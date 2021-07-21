@@ -22,7 +22,7 @@ function Initialize()
 end
 
 --Function by LuigiM
-function floatHack(intVal)
+function FloatHack(intVal)
     return string.unpack("f", string.pack("I4", intVal))
 end
 
@@ -39,11 +39,11 @@ function NaviObjects(navimgr)
         NaviOne = ReadValue32(navimgr + 0x28)
         NaviTwo = NaviOne + 0x320
         OldOlimarPosY, OldLouiePosY = OlimarPosY, LouiePosY
-        OlimarPosX, OlimarPosY, OlimarPosZ = floatHack(ReadValue32(NaviOne + 0x20c)), floatHack(ReadValue32(NaviOne + 0x210)), floatHack(ReadValue32(NaviOne + 0x214))
-        LouiePosX, LouiePosY, LouiePosZ = floatHack(ReadValue32(NaviTwo + 0x20c)), floatHack(ReadValue32(NaviTwo + 0x210)), floatHack(ReadValue32(NaviTwo + 0x214))
+        OlimarPosX, OlimarPosY, OlimarPosZ = FloatHack(ReadValue32(NaviOne + 0x20c)), FloatHack(ReadValue32(NaviOne + 0x210)), FloatHack(ReadValue32(NaviOne + 0x214))
+        LouiePosX, LouiePosY, LouiePosZ = FloatHack(ReadValue32(NaviTwo + 0x20c)), FloatHack(ReadValue32(NaviTwo + 0x210)), FloatHack(ReadValue32(NaviTwo + 0x214))
         OlimarVelY, LouieVelY = Velocity(OldOlimarPosY, OlimarPosY), Velocity(OldLouiePosY, LouiePosY)
-        OlimarVelX, OlimarVelZ = floatHack(ReadValue32(NaviOne+0x1e4)), floatHack(ReadValue32(NaviOne+0x1ec))
-        LouieVelX, LouieVelZ = floatHack(ReadValue32(NaviTwo+0x1e4)), floatHack(ReadValue32(NaviTwo+0x1ec))
+        OlimarVelX, OlimarVelZ = FloatHack(ReadValue32(NaviOne+0x1e4)), FloatHack(ReadValue32(NaviOne+0x1ec))
+        LouieVelX, LouieVelZ = FloatHack(ReadValue32(NaviTwo+0x1e4)), FloatHack(ReadValue32(NaviTwo+0x1ec))
         OlimarCurrTri = ReadValue32(NaviOne + 0xc8)
         LouieCurrTri = ReadValue32(NaviTwo + 0xc8)
         if OlimarVelX and OlimarVelZ then OlimarVelXZ = math.sqrt((OlimarVelX^2) + (OlimarVelZ^2)) end

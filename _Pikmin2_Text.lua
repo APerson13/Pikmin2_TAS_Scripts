@@ -1,11 +1,14 @@
+---@diagnostic disable: lowercase-global
 
+package.path = GetScriptsDir() .. "pikminTwoRNG.lua"
 pTwoRng = require("pikminTwoRNG")
+package.path = GetScriptsDir() .. "Pikmin2_Common.lua"
 pTwoCmn = require("Pikmin2_Common")
 
 --Uses Malleo's RNG index functions
 function RngCalls(oldSeed, newSeed)
     if newSeed and oldSeed then
-        return pTwoRng.rnginverse(newSeed) - pTwoRng.rnginverse(oldSeed)
+        return rnginverse(newSeed) - rnginverse(oldSeed)
     end
     return nil
 end
@@ -13,7 +16,7 @@ end
 --Add an underscore (_) to the beginning of the filename if you want the script to auto launch once you start a game!
 
 function onScriptStart()
-    pTwoCmn.Initialize()
+    Initialize()
 end
 
 function onScriptCancel()
@@ -33,7 +36,7 @@ function onScriptUpdate()
 
         if NaviMgrPtr > 0x80000000 then
             NaviMgr = ReadValue32(NaviMgrPtr)
-            pTwoCmn.NaviObjects(NaviMgr)
+            NaviObjects(NaviMgr)
         end
 
         local text = ""
