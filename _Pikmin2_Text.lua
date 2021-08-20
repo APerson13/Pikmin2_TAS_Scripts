@@ -16,6 +16,7 @@ end
 --Add an underscore (_) to the beginning of the filename if you want the script to auto launch once you start a game!
 
 function onScriptStart()
+    -- CancelScript()
     Initialize()
 end
 
@@ -31,8 +32,10 @@ function onScriptUpdate()
         end
 
         OldRNG = RNG
-        RNG = ReadValue32(RNGPtr)
-        Calls = RngCalls(OldRNG, RNG)
+        if RNGPtr and RNGPtr > 0x80000000 then RNG = ReadValue32(RNGPtr) end
+        if RNG and OldRNG then FrameRNGCalls = RngCalls(OldRNG, RNG) end
+        if FrameRNGCalls then if FrameRNGCalls < 0 and FrameRNGCalls > -1000000 then BaseRNG = RNG end end
+        if BaseRNG then StateRNGCalls = RngCalls(BaseRNG, RNG) end
 
         if NaviMgrPtr > 0x80000000 then
             NaviMgr = ReadValue32(NaviMgrPtr)
@@ -44,11 +47,14 @@ function onScriptUpdate()
             text = text .. "\nVersion: US Demo 1\n"
         elseif GameID == "GPVE01" then
             text = text .. "\nVersion: US Final\n"
+        elseif GameID == "GPVJ01" then
+            text = text .. "\nVersion: JPN\n"
         end
 
 	    text = text .. string.format("\n===RNG===\nSeed on this frame: %x", RNG)
         -- if OldRNG then text = text .. string.format("\nLast frame seed: %x", OldRNG) end
-        if Calls then text = text .. string.format("\nCalls since last frame: %d", Calls) end
+        if FrameRNGCalls then text = text .. string.format("\nCalls since last frame: %d", FrameRNGCalls) end
+        if BaseRNG then text = text .. string.format("\nCalls since state loaded: %d", StateRNGCalls) end
 
         if DemoState then text = text .. string.format("\n\n===Cutscenes===\nButton lockout: %d", DemoState) end
 
