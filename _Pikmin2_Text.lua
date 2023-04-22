@@ -1,86 +1,136 @@
----@diagnostic disable: lowercase-global
+-- pikmin 2 helper library imports --
+package.path = GetScriptsDir() .. "pikmin2RNG.lua"
+local p2Rng = require("pikmin2RNG")
 
-package.path = GetScriptsDir() .. "pikminTwoRNG.lua"
-pTwoRng = require("pikminTwoRNG")
-package.path = GetScriptsDir() .. "Pikmin2_Common.lua"
-pTwoCmn = require("Pikmin2_Common")
+package.path = GetScriptsDir() .. "Pikmin2Common.lua"
+local p2Cmn = require("pikmin2Common")
 
---Uses Malleo's RNG index functions
-function RngCalls(oldSeed, newSeed)
-    if newSeed and oldSeed then
-        return rnginverse(newSeed) - rnginverse(oldSeed)
+-- full script-scope variables --
+local OldFrame
+local OldRNG
+local RNG
+local FrameRNGCalls
+local BaseRNG
+
+-- helper functions --
+-- checks if an object is in valid memory range.
+local function validatePtr(ptr)
+    if ptr > 0x80000000 and ptr < 0x817ffff0 then
+        return true
     end
-    return nil
+    return false
 end
 
---Add an underscore (_) to the beginning of the filename if you want the script to auto launch once you start a game!
+-- the part lua core cares about --
 
 function onScriptStart()
-    -- CancelScript()
-    Initialize()
+    p2Cmn.Initialize()
 end
 
 function onScriptCancel()
-	SetScreenText("")
+    SetScreenText("")
 end
 
 function onScriptUpdate()
     if OldFrame ~= GetFrameCount() then
-        if MoviePlayerPtrPtr > 0x80000000 then --Make sure no bad pointers are read
-            MoviePlayerPtr = ReadValue32(MoviePlayerPtrPtr)
-            if MoviePlayerPtr > 0x80000000 then DemoState = ReadValue32(MoviePlayerPtr + 0x18) end
-        end
 
+        -- RNG
         OldRNG = RNG
-        if RNGPtr and RNGPtr > 0x80000000 then RNG = ReadValue32(RNGPtr) end
-        if RNG and OldRNG then FrameRNGCalls = RngCalls(OldRNG, RNG) end
-        if FrameRNGCalls then if FrameRNGCalls < 0 and FrameRNGCalls > -1000000 then BaseRNG = RNG end end
-        if BaseRNG then StateRNGCalls = RngCalls(BaseRNG, RNG) end
-
-        if NaviMgrPtr > 0x80000000 then
-            NaviMgr = ReadValue32(NaviMgrPtr)
-            NaviObjects(NaviMgr)
+        if validatePtr(p2Cmn.RNGPtr) then
+            RNG = ReadValue32(p2Cmn.RNGPtr)
         end
 
-        local text = ""
+        if RNG and OldRNG then
+            FrameRNGCalls = p2Rng.RngCalls(OldRNG, RNG)
+        end
+
+        if FrameRNGCalls and FrameRNGCalls < 0 and FrameRNGCalls > -1000000 then
+            BaseRNG = RNG
+        end
+
+        if BaseRNG then
+            StateRNGCalls = p2Rng.RngCalls(BaseRNG, RNG)
+        end
+
+        -- update demostate
+        p2Cmn.movieState()
+
+        -- update navi object things
+        p2Cmn.naviObjects()
+
+        -- print things
+        local text = "\n"
         if IsDemo then
-            text = text .. "\nVersion: US Demo 1\n"
-        elseif GameID == "GPVE01" then
-            text = text .. "\nVersion: US Final\n"
-        elseif GameID == "GPVJ01" then
-            text = text .. "\nVersion: JPN\n"
+            text = text .. "Version: US Demo 1\n"
+        elseif GetGameID() == "GPVE01" then
+            text = text .. "Version: US Final\n"
+        elseif GetGameID() == "GPVJ01" then
+            text = text .. "Version: JPN\n"
         end
 
-	    text = text .. string.format("\n===RNG===\nSeed on this frame: %x", RNG)
-        -- if OldRNG then text = text .. string.format("\nLast frame seed: %x", OldRNG) end
-        if FrameRNGCalls then text = text .. string.format("\nCalls since last frame: %d", FrameRNGCalls) end
-        if BaseRNG then text = text .. string.format("\nCalls since state loaded: %d", StateRNGCalls) end
+        text = text .. string.format("\n===RNG===\nSeed on this frame: 0x%08X\n", RNG)
+        if FrameRNGCalls then
+            text = text .. string.format("Calls since last frame: %d\n", FrameRNGCalls)
+        end
+        if BaseRNG then
+            text = text .. string.format("Calls since state loaded: %d\n", StateRNGCalls)
+        end
 
-        if DemoState then text = text .. string.format("\n\n===Cutscenes===\nButton lockout: %d", DemoState) end
+        if p2Cmn.DemoState then
+            text = text .. string.format(
+                "\n===Cutscenes===\nDemo state: %d\n(A nonzero demo state implies button lockout.)\n",
+                p2Cmn.DemoState)
+        end
 
-        text = text .. "\n\n===Positions and Velocities==="
-        if OlimarPosX and OlimarVelX then text = text .. string.format("\nOlimar:\nX pos: %5f | X speed: %5f", OlimarPosX, OlimarVelX) end
-        if OlimarPosY and OlimarVelY then text = text .. string.format("\nY pos: %5f | Y speed: %5f", OlimarPosY, OlimarVelY) end
-        if OlimarPosZ and OlimarVelZ then text = text .. string.format("\nZ pos: %5f | Z speed: %5f", OlimarPosZ, OlimarVelZ) end
-        if OlimarVelXZ then text = text .. string.format("\nXZ speed: %5f", OlimarVelXZ) end
-        if OlimarColl then text = text .. string.format("\nCollision version: %d", OlimarColl) end
-        if LouiePosX and LouieVelX then text = text .. string.format("\nLouie:\nX pos: %5f | X speed: %5f", LouiePosX, LouieVelX) end
-        if LouiePosY and LouieVelY then text = text .. string.format("\nY pos: %5f | Y speed: %5f", LouiePosY, LouieVelY) end
-        if LouiePosZ and LouieVelZ then text = text .. string.format("\nZ pos: %5f | Z speed: %5f", LouiePosZ, LouieVelZ) end
-        if LouieVelXZ then text = text .. string.format("\nXZ speed: %5f", LouieVelXZ) end
-        if LouieColl then text = text .. string.format("\nCollision version: %d", LouieColl) end
+        text = text .. "\n===Positions and Velocities===\n"
+        -- for the vectors we assume that the x field existing implies all fields exist.
+        if p2Cmn.OlimarPos.x then
+            text = text .. string.format(
+                "Olimar:\nPosition: x = %.5f|y = %.5f|z = %.5f\n",
+                p2Cmn.OlimarPos.x,p2Cmn.OlimarPos.y,p2Cmn.OlimarPos.z
+            )
+        end
+        if p2Cmn.OlimarVel.x then
+            text = text .. string.format(
+                "Velocity: x = %.5f|y = %.5f|z = %.5f\n",
+                p2Cmn.OlimarVel.x,p2Cmn.OlimarVel.y,p2Cmn.OlimarVel.z
+            )
+            text = text .. string.format("         xz = %.5f\n", p2Cmn.OlimarVel.xz)
+        end
+        if p2Cmn.OlimarColl then
+            text = text .. string.format("Collision version: %d\n", p2Cmn.OlimarColl)
+        end
+        if p2Cmn.OlimarStateID and p2Cmn.NaviStateIDs[p2Cmn.OlimarStateID] then
+            text = text .. "State: " .. p2Cmn.NaviStateIDs[p2Cmn.OlimarStateID] .. "\n"
+        end
 
-        ----TESTS----
+        if p2Cmn.LouiePos.x then
+            text = text .. string.format(
+                "\nLouie:\nPosition: x = %.5f|y = %.5f|z = %.5f\n",
+                p2Cmn.LouiePos.x,p2Cmn.LouiePos.y,p2Cmn.LouiePos.z
+            )
+        end
+        if p2Cmn.LouieVel.x then
+            text = text .. string.format(
+                "Velocity: x = %.5f|y = %.5f|z = %.5f\n",
+                p2Cmn.LouieVel.x,p2Cmn.LouieVel.y,p2Cmn.LouieVel.z
+            )
+            text = text .. string.format("         xz = %.5f\n", p2Cmn.LouieVel.xz)
+        end
+        if p2Cmn.LouieColl then
+            text = text .. string.format("Collision version: %d\n", p2Cmn.LouieColl)
+        end
+        if p2Cmn.LouieStateID and p2Cmn.NaviStateIDs[p2Cmn.LouieStateID] then
+            text = text .. "State: " .. p2Cmn.NaviStateIDs[p2Cmn.LouieStateID] .. "\n"
+        end
 
-	    SetScreenText(text)
+        SetScreenText(text)
     end
     OldFrame = GetFrameCount()
 end
 
 function onStateLoaded()
-
 end
 
 function onStateSaved()
-
 end
