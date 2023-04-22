@@ -60,7 +60,7 @@ function onScriptUpdate()
 
         -- print things
         local text = "\n"
-        if IsDemo then
+        if p2Cmn.isDemo then
             text = text .. "Version: US Demo 1\n"
         elseif GetGameID() == "GPVE01" then
             text = text .. "Version: US Final\n"
